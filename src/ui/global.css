@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-background: 248 250 252;
+    --color-surface: 255 255 255;
+    --color-text: 15 23 42;
+    --color-muted: 71 85 105;
+    --color-brand: 37 99 235;
+    --color-danger: 220 38 38;
+  }
+
+  .dark {
+    --color-background: 15 23 42;
+    --color-surface: 30 41 59;
+    --color-text: 241 245 249;
+    --color-muted: 148 163 184;
+    --color-brand: 96 165 250;
+    --color-danger: 248 113 113;
+  }
+}

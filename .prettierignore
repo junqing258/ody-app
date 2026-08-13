@@ -1,0 +1,6 @@
+ios/**/*.pbxproj
+ios/**/*.storyboard
+ios/**/*.xcprivacy
+pnpm-lock.yaml
+coverage/
+node_modules/

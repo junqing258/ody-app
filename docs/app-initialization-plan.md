@@ -1,6 +1,6 @@
 # Ody App 初始化与混合架构计划
 
-> 状态：Draft / 待评审  
+> 状态：Implemented / Phase 0–3 基础工程已落地；真实业务 feature、签名团队和性能阈值待产品信息确认  
 > 日期：2026-08-13  
 > 本阶段范围：只确认方案与实施计划，不初始化工程代码。
 
@@ -31,8 +31,8 @@
 - RN：TypeScript，按业务模块注册 Root Component，由 Native 按需挂载。
 - 跨边界导航：Native `UINavigationController` 是唯一总导航；RN 内部页面使用 React Navigation。
 - 客户端状态：Zustand；异步服务端状态在真正接 API 时引入 TanStack Query，两者不混用职责。
-- UI：Tamagui 作为候选首选，以 design tokens/theme 为定制入口；在 PoC 阶段验证包体、启动性能和原生嵌入表现后正式锁定。
-- 样式系统：首期不叠加 NativeWind；Tamagui 与 NativeWind 作为二选一的 PoC 候选，而不是同时作为全局样式入口。
+- UI：确定采用 **NativeWind v4 + React Native Reusables（RNR）**，使用 Tailwind utility、语义化 design tokens 和项目内组件源码构建设计系统。
+- 样式系统：不引入 Tamagui 或第二套全局样式引擎；RNR 组件复制进仓库后由项目负责审查、定制和升级。
 - JS 包管理：pnpm；Node 版本通过 `.nvmrc`/Volta 二选一固定（实施时根据团队环境决定）。
 - RN 使用当时稳定版本的精确版本号，并与 Xcode、iOS Deployment Target、CocoaPods/Ruby 工具链一起形成兼容矩阵；不使用 `latest` 或宽松版本范围。
 
@@ -67,7 +67,7 @@ flowchart LR
     ROUTER["React Navigation"]
     SCREEN["RN Screens"]
     STORE["Zustand Store"]
-    UI["Tamagui Theme and Components"]
+    UI["NativeWind v4 + RNR Components"]
   end
 
   APP --> NAV --> HOME
@@ -134,9 +134,11 @@ type AppRoute =
 
 ## 7. UI 与定制化
 
-### 7.1 推荐方向
+### 7.1 已选方向
 
-PoC 首选 Tamagui，重点验证其 token、theme、variant 和基础组件能力。业务组件不得直接依赖第三方组件的全部 API，而应通过 `src/ui` 中的薄封装暴露，例如 `AppButton`、`AppText`、`AppScreen`。
+确定采用 **NativeWind v4 + React Native Reusables**：NativeWind 负责 Tailwind utility 到 React Native 样式的编译和运行时条件样式；RNR 通过 CLI 将 shadcn/ui 风格组件源码复制到项目。复制后的组件进入 `src/ui` 并视为项目自有代码，不作为不可修改的第三方黑盒。
+
+首期不采用 NativeWind v5 pre-release，不引入 Tamagui，也不同时维护第二套全局样式系统。业务页面优先使用 `src/ui` 组件；只在缺少适合组件时直接组合 React Native primitives 与 NativeWind classes。
 
 设计层级：
 
@@ -146,26 +148,29 @@ PoC 首选 Tamagui，重点验证其 token、theme、variant 和基础组件能�
 4. Components：统一 variant、尺寸、禁用态、加载态和无障碍属性。
 5. Feature UI：只消费语义 token 和封装后的组件。
 
-### 7.2 PoC 退出条件
+### 7.2 集成与维护规则
 
-若 Tamagui 在当前 RN 稳定版上出现不可接受的编译复杂度、Native 嵌入启动回归、包体增量或维护风险，则回退到 **React Native primitives + Restyle/自建设计系统层**。React Native Paper 可作为强调 Material Design 的备选，但目前不假定产品视觉采用 Material。
+- 在现有 Community CLI/brownfield 工程内手动安装，不使用 RNR 的 Expo `init` 模板。
+- 固定 NativeWind v4、Tailwind CSS v3 及兼容依赖的精确版本；版本升级必须同时验证 Babel、Metro、Reanimated 和 iOS Release bundle。
+- `global.css` 是颜色语义 token 的权威源；通过脚本生成 `theme.ts`，供 React Navigation、动画和无法消费 class 的场景使用，禁止人工维护两份颜色值。
+- RNR CLI 只用于显式添加或更新组件。所有生成代码必须经过 code review，不允许在 CI 中自动覆盖项目组件。
+- 复杂浮层统一通过每个 RN feature root 的 `PortalHost`；验证重复挂载、关闭与 Native navigation/modal 的层级关系。
+- 组件 variant 使用 CVA；页面不得散落品牌色、随意值或与设计 token 重复的 arbitrary classes。
+- 每个引入的 RNR 组件补充项目所需的 Dynamic Type、VoiceOver、触控区域和深浅色测试。
 
-### 7.3 NativeWind 决策
+### 7.3 PoC 验收与退出条件
 
-**首期不建议在 Tamagui 之外再全局引入 NativeWind。** 两者都覆盖样式编译、主题/token、响应式能力和组件样式表达，同时使用会产生两个设计 token 来源、两套主题切换机制和两种组件编写范式，还会叠加 Babel/Metro 配置与升级排查成本。对当前 Native-first、iOS-only 的项目，这些成本暂时没有明确收益。
+PoC 使用 Button、Input/Form、List、Dialog/Popover、dark theme 和 Native 首页进入 RN 首屏作为样本，验证：
 
-NativeWind 适合成为 **Tamagui 的替代候选**，条件是团队更重视 Tailwind utility-first 开发体验，并愿意基于 RN primitives 自建和维护组件库。选择边界如下：
+- Community CLI brownfield 下 Debug/Release 均可编译，Release 不依赖 Metro。
+- NativeWind 编译结果、首次/再次 RN root 挂载时间、bundle 与内存增量有基线。
+- `PortalHost` 在多个 RN feature root 中挂载和销毁正确。
+- Native 系统主题、React Navigation theme、NativeWind CSS variables 单向同步。
+- RNR 组件满足基本可访问性、键盘避让和 iOS 返回/弹层交互要求。
 
-| 诉求 | 建议 |
-| --- | --- |
-| 希望获得较完整、可主题化且含交互行为的跨端组件 | Tamagui |
-| 团队熟悉 Tailwind，希望快速组合页面并自建组件规范 | NativeWind |
-| 已有 Tamagui 组件，仅想偶尔用 `className` 写布局 | 不引入；统一使用 Tamagui props/tokens |
-| 第三方组件难以使用 Tamagui 包装 | 优先局部 `StyleSheet`/adapter，不为个例引入第二套全局引擎 |
+若 NativeWind/RNR 在当前 RN 稳定版上无法满足 Release 构建、主题一致性或 Native 嵌入性能要求，先回退为 **React Native primitives + StyleSheet + 项目自有组件层**，再重新评审替代方案；不在同一工程中临时叠加 Tamagui。
 
-如果 PoC 要比较两者，应使用同一组 Button、Form、List、dark theme 和 RN 首屏场景分别实现，比较开发体验、类型检查、构建配置、首次/再次挂载耗时与 bundle 增量；比较完成后只保留一个全局样式系统。NativeWind 当前稳定文档为 v4，v5 仍标记为 pre-release，因此即使最终选择 NativeWind，首期也不采用 v5 预览版。
-
-### 7.4 NativeWind + React Native Reusables 与 Tamagui 对比
+### 7.4 选型对比记录
 
 React Native Reusables（RNR）不是传统的二进制组件依赖，而是类似 shadcn/ui 的组件源码分发方式：CLI 将组件复制到项目，组件使用 NativeWind/Uniwind、RN Primitives、CVA，复杂动效使用 Reanimated。项目能完全控制源码，但也需要自行承担后续维护和上游修复合并。
 
@@ -175,20 +180,12 @@ React Native Reusables（RNR）不是传统的二进制组件依赖，而是类�
 | 编写体验 | Tailwind `className`、CVA variants | 类型化 style props、`styled` variants、tokens |
 | 定制自由 | 最高，可直接修改组件结构与行为 | 高，通常通过 tokens/themes/封装，深改受抽象约束 |
 | 初始配置 | Babel/Metro/CSS/Tailwind/Reanimated/PortalHost；RNR 文档偏 Expo | Core 可低配置使用，Provider/config；编译器可延后 |
-| 主题维护 | 当前需同步 `global.css` 与 `theme.ts`，还要协调导航主题 | token/theme 配置集中，组件直接消费 |
+| 主题维护 | `global.css` 为权威源并生成 `theme.ts`，供导航与动画消费 | token/theme 配置集中，组件直接消费 |
 | 组件升级 | 源码归项目；上游更新需选择性合并 | 包升级集中获得修复；存在版本迁移与框架耦合 |
 | 组件与交互 | shadcn 风格，依赖 RN Primitives；部分 native 行为与 Web/Radix 不同 | 组件和跨端 Adapt/animation 能力更完整 |
 | Brownfield 适配 | 可行，但官方快速路径以 Expo 为主，需验证多个 RN Root、PortalHost、主题同步 | 更接近单一 Provider/config 接入；仍需验证多个 RN Root 与首次挂载 |
 
-**当前建议仍为 Tamagui 优先 PoC。** Ody 首期更大的风险在 Native/RN 宿主、路由和桥接，而不是组件源码不可控；Tamagui 能减少首期设计系统拼装工作。若团队已经高度熟悉 Tailwind/shadcn，且明确愿意长期拥有、审查和升级组件源码，则改选 NativeWind + RNR 更合理，此时应完全替代 Tamagui。
-
-PoC 必须补测 RNR 的几个项目特有风险：
-
-- Community CLI/brownfield 环境的手动安装，不采用其 Expo `init` 模板。
-- 每个 RN feature root 的 `PortalHost` 挂载、清理以及 modal/menu 层级。
-- Native 系统主题、React Navigation theme、NativeWind CSS variables 与 `theme.ts` 的单向同步方案。
-- 组件复制后建立内部 owner、上游变更追踪和可访问性回归测试。
-- NativeWind 采用稳定 v4；不以 v5 pre-release 作为首期基线。
+**已决策选择 NativeWind + RNR。** 决策依据是团队接受 Tailwind/shadcn 的 utility-first 方式，并希望拥有组件源码和深度定制能力。对应代价是项目需要承担组件 owner、上游变更追踪和可访问性回归；Tamagui 仅保留为历史比较项，不进入依赖或 PoC。
 
 ## 8. Native / RN 通信
 
@@ -262,7 +259,7 @@ ody-app/
 
 - 引入 React Navigation，完成 RN 内两页跳转与类型安全路由。
 - 引入 Zustand，演示 store 隔离、持久化版本与清理流程。
-- 完成 UI PoC：主题切换、Button/Text/Input/Screen 基础封装。
+- 完成 NativeWind + RNR PoC：主题切换、Button/Text/Input/Screen、PortalHost 与组件源码维护流程。
 - 建立 Native/RN route、session、app-info 契约及测试。
 
 验收：Native -> RN 子页面 -> RN 返回 -> Native 全链路通过；light/dark theme 与 Dynamic Type 基础检查通过。
@@ -303,7 +300,7 @@ ody-app/
 1. iOS 宿主 UI：本计划默认 **UIKit**；若团队已有 SwiftUI 基建，需要调整 RN 容器包装方式。
 2. App 基本信息：产品名、Bundle ID、最低 iOS 版本、签名团队。
 3. RN 首个真实业务 feature 是什么，用于替换示例页并验证架构。
-4. UI 视觉方向是否接受 Tamagui PoC；是否已有 Figma tokens/品牌规范。
+4. 是否已有 Figma tokens/品牌规范，用于映射 RNR 的 shadcn 语义变量；UI 技术栈不再是待确认项。
 5. 是否已有登录、网络、埋点、崩溃平台，需要纳入 Native/RN 统一适配。
 6. pnpm 与 Node 固定方式是否符合团队现有 CI 环境。
 
@@ -313,7 +310,7 @@ ody-app/
 
 - 同意 Native-first brownfield，Native 首页与总导航保持原生。
 - 同意 React Navigation + Zustand；TanStack Query 延后到首个 API feature。
-- 同意 Tamagui 先做有退出条件的 PoC，而非立即成为不可替换的全局依赖。
+- NativeWind v4 + RNR 已确定；提供品牌 tokens，并接受生成组件源码由项目长期维护。
 - 提供 Bundle ID、最低 iOS 版本和首个 RN feature。
 
 ## 参考
