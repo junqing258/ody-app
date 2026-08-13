@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   NavigationContainer,
   DarkTheme,
@@ -6,7 +6,7 @@ import {
   type Theme,
 } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { StatusBar, useColorScheme } from 'react-native';
+import { StatusBar, View, useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { DetailsScreen } from '../features/example/DetailsScreen';
@@ -34,24 +34,33 @@ function navigationTheme(isDark: boolean): Theme {
 export function AppRoot({ initialRoute }: { initialRoute?: InitialRoute }) {
   const isDark = useColorScheme() === 'dark';
   const theme = useMemo(() => navigationTheme(isDark), [isDark]);
+  const [isRuntimeReady, setIsRuntimeReady] = useState(false);
   const initialScreen =
     initialRoute?.screen === 'Details' ? 'Details' : 'Example';
+
+  // Native-stack and safe-area both emit native layout events while mounting.
+  // Mount them on the first post-commit frame, after the RN root has finished
+  // registering its callable JS modules. This is especially important when the
+  // root is opened on demand by the UIKit host.
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setIsRuntimeReady(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  if (!isRuntimeReady) {
+    return <View className="flex-1 bg-background" />;
+  }
 
   return (
     <SafeAreaProvider>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       <NavigationContainer theme={theme}>
-        <Stack.Navigator initialRouteName={initialScreen}>
-          <Stack.Screen
-            name="Example"
-            component={ExampleScreen}
-            options={{ title: 'Ody App' }}
-          />
-          <Stack.Screen
-            name="Details"
-            component={DetailsScreen}
-            options={{ title: '详情' }}
-          />
+        <Stack.Navigator
+          initialRouteName={initialScreen}
+          screenOptions={{ headerShown: false }}
+        >
+          <Stack.Screen name="Example" component={ExampleScreen} />
+          <Stack.Screen name="Details" component={DetailsScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
