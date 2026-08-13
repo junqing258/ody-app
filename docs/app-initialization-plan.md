@@ -110,7 +110,7 @@ type AppRoute =
 
 - Native -> RN：通过 `initialProperties` 传入版本化、可序列化的启动参数。
 - RN -> Native：通过类型化 Native Module 请求 `close` 或 `openNativeRoute`。
-- RN 容器默认不渲染与 Native 重复的 Navigation Bar；由页面契约决定状态栏和手势返回行为。
+- RN 子栈使用 React Navigation native-stack 的原生 header；外层 `UINavigationController` 在 RN 容器页隐藏自己的导航栏以避免双栏。标题在 RN screen options 中声明，不再通过 `AppNavigation.setTitle` 桥设置。状态栏和手势返回行为仍由页面契约决定。
 - Deep Link 先由 Native Router 解析，禁止 Native 与 RN 各自抢占 URL handler。
 - 所有跨边界参数都需要 schema 校验和契约测试，不传闭包或不可序列化对象。
 

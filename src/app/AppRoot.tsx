@@ -57,10 +57,18 @@ export function AppRoot({ initialRoute }: { initialRoute?: InitialRoute }) {
       <NavigationContainer theme={theme}>
         <Stack.Navigator
           initialRouteName={initialScreen}
-          screenOptions={{ headerShown: false }}
+          screenOptions={{ headerShown: true, headerShadowVisible: false }}
         >
-          <Stack.Screen name="Example" component={ExampleScreen} />
-          <Stack.Screen name="Details" component={DetailsScreen} />
+          <Stack.Screen
+            name="Example"
+            component={ExampleScreen}
+            options={{ title: 'Ody App', headerBackVisible: false }}
+          />
+          <Stack.Screen
+            name="Details"
+            component={DetailsScreen}
+            options={{ title: '详情', headerBackButtonDisplayMode: 'minimal' }}
+          />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
