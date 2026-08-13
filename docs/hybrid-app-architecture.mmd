@@ -1,0 +1,24 @@
+flowchart LR
+  subgraph IOS["iOS Native Host"]
+    APP["App lifecycle"]
+    NAV["UINavigationController"]
+    HOME["Native Home"]
+    HOST["RNHost / RNViewController"]
+    BRIDGE["Typed Native Modules and Events"]
+  end
+
+  subgraph RN["React Native Runtime"]
+    ROOT["Registered Feature Root"]
+    ROUTER["React Navigation"]
+    SCREEN["RN Screens"]
+    STORE["Zustand Store"]
+    UI["Tamagui Theme and Components"]
+  end
+
+  APP --> NAV --> HOME
+  HOME -->|"open RN feature"| HOST
+  HOST --> ROOT --> ROUTER --> SCREEN
+  SCREEN --> STORE
+  SCREEN --> UI
+  HOST <--> BRIDGE <--> ROOT
+  ROOT -->|"close / open native route"| NAV
