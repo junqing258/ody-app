@@ -4,20 +4,22 @@
 
 @layer base {
   :root {
-    --color-background: 248 250 252;
+    --color-background: 243 245 248;
     --color-surface: 255 255 255;
-    --color-text: 15 23 42;
-    --color-muted: 71 85 105;
-    --color-brand: 37 99 235;
-    --color-danger: 220 38 38;
+    --color-text: 47 58 74;
+    --color-muted: 95 107 122;
+    --color-brand: 46 198 214;
+    --color-danger: 235 87 87;
   }
 
-  .dark {
-    --color-background: 15 23 42;
-    --color-surface: 30 41 59;
-    --color-text: 241 245 249;
-    --color-muted: 148 163 184;
-    --color-brand: 96 165 250;
-    --color-danger: 248 113 113;
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-background: 41 41 41;
+      --color-surface: 48 48 48;
+      --color-text: 247 248 250;
+      --color-muted: 164 169 176;
+      --color-brand: 46 198 214;
+      --color-danger: 235 87 87;
+    }
   }
 }

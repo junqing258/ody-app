@@ -33,7 +33,10 @@ export function Button({
   className,
   ...props
 }: ButtonProps) {
-  const isDark = variant === 'primary' || variant === 'danger';
+  const hasLightText =
+    (variant ?? 'primary') === 'primary' ||
+    variant === 'secondary' ||
+    variant === 'danger';
   return (
     <Pressable
       accessibilityRole="button"
@@ -44,7 +47,7 @@ export function Button({
       <Text
         className={cn(
           'text-center text-base font-semibold',
-          isDark ? 'text-white' : 'text-text',
+          hasLightText ? 'text-white' : 'text-text',
         )}
       >
         {label}

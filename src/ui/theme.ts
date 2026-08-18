@@ -1,19 +1,19 @@
 export const themeColors = {
   light: {
-    background: '#F8FAFC',
+    background: '#F3F5F8',
     surface: '#FFFFFF',
-    text: '#0F172A',
-    muted: '#475569',
-    brand: '#2563EB',
-    danger: '#DC2626',
+    text: '#2F3A4A',
+    muted: '#5F6B7A',
+    brand: '#2EC6D6',
+    danger: '#EB5757',
   },
   dark: {
-    background: '#0F172A',
-    surface: '#1E293B',
-    text: '#F1F5F9',
-    muted: '#94A3B8',
-    brand: '#60A5FA',
-    danger: '#F87171',
+    background: '#292929',
+    surface: '#303030',
+    text: '#F7F8FA',
+    muted: '#A4A9B0',
+    brand: '#2EC6D6',
+    danger: '#EB5757',
   },
 } as const;
 

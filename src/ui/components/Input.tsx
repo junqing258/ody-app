@@ -1,11 +1,22 @@
 import React from 'react';
-import { Text, TextInput, type TextInputProps, View } from 'react-native';
+import {
+  Text,
+  TextInput,
+  useColorScheme,
+  type TextInputProps,
+  View,
+} from 'react-native';
 
 import { cn } from '../cn';
+import { themeColors } from '../theme';
 
 type InputProps = TextInputProps & { label?: string; error?: string };
 
 export function Input({ label, error, className, ...props }: InputProps) {
+  const isDark = useColorScheme() === 'dark';
+  const placeholderTextColor =
+    themeColors[isDark ? 'dark' : 'light'].muted;
+
   return (
     <View className="gap-2">
       {label ? (
@@ -17,7 +28,7 @@ export function Input({ label, error, className, ...props }: InputProps) {
           error && 'border-danger',
           className,
         )}
-        placeholderTextColor="#94A3B8"
+        placeholderTextColor={placeholderTextColor}
         {...props}
       />
       {error ? <Text className="text-sm text-danger">{error}</Text> : null}
